@@ -1,0 +1,435 @@
+<!-- HTML-kod börjar här -->
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Digitaalinen mikroskooppi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    /* CSS - oförändrad, samma som tidigare */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #e6ebf0;
+      color: #222;
+      padding: 20px;
+    }
+    .header-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .logo-image {
+      width: 80px;
+      height: auto;
+      display: block;
+    }
+    h1 {
+      font-size: 2.5rem;
+      color: #2c3e50;
+      margin: 0;
+    }
+    .microscope-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+    .microscope-container {
+      background: #ffffff;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    }
+    .image-frame {
+      width: 800px;
+      height: 550px;
+      border: 4px solid #000;
+      overflow: hidden;
+      position: relative;
+      background: #fff;
+      border-radius: 10px;
+    }
+    .image-frame:fullscreen {
+      width: 100vw;
+      height: 100vh;
+      border: none;
+      border-radius: 0;
+    }
+    .specimen-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: auto;
+      height: auto;
+      max-width: none;
+      max-height: none;
+      transform-origin: top left;
+      transition: transform 0.3s ease;
+      display: none;
+      user-select: none;
+      cursor: grab;
+    }
+    .specimen-image:active {
+      cursor: grabbing;
+    }
+    #placeholderText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3rem;
+      color: #555;
+      user-select: none;
+      pointer-events: none;
+    }
+    .knobs-container {
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: center;
+      gap: 35px;
+      margin-top: 20px;
+    }
+    .knob {
+      width: 60px;
+      height: 60px;
+      background: #2c3e50;
+      color: #fff;
+      border: 4px solid #95a5a6;
+      border-radius: 50%;
+      font-size: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: inset -2px -2px 6px rgba(255, 255, 255, 0.3),
+                  inset 2px 2px 6px rgba(0, 0, 0, 0.2),
+                  0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s, background 0.3s;
+      user-select: none;
+    }
+    .knob:hover {
+      background: #34495e;
+      transform: scale(1.05);
+    }
+    .controls-panel {
+      margin-top: 20px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+      min-width: 300px;
+      text-align: left;
+    }
+    .controls-panel h3 {
+      margin-bottom: 10px;
+      color: #2c3e50;
+    }
+    .controls-panel button,
+    .controls-panel select,
+    .controls-panel input[type="file"] {
+      padding: 10px 15px;
+      font-size: 14px;
+      margin: 8px;
+      border: 1px solid #bbb;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+      cursor: pointer;
+    }
+    .controls-panel button:hover {
+      background-color: #e0e0e0;
+    }
+    .fullscreen-controls {
+      display: none;
+    }
+    .image-frame:fullscreen .fullscreen-controls {
+      display: flex;
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 15px;
+      border-radius: 12px;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .image-frame:fullscreen .knobs-container {
+      margin-top: 0;
+    }
+    @media (max-width: 850px) {
+      .image-frame {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 4 / 3;
+      }
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      .header-container {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .logo-image {
+        width: 60px;
+      }
+      h1 {
+        font-size: 1.5rem;
+        text-align: center;
+      }
+      .microscope-wrapper {
+        flex-direction: column;
+        gap: 20px;
+      }
+      .microscope-container {
+        width: 100%;
+        padding: 15px;
+        box-sizing: border-box;
+      }
+      .knobs-container {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+      }
+      .knob {
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+        border-width: 3px;
+      }
+      .controls-panel {
+        width: 100%;
+        padding: 15px;
+        min-width: unset;
+      }
+      .controls-panel button,
+      .controls-panel select,
+      .controls-panel input[type="file"] {
+        width: 100%;
+        margin: 6px 0;
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-container">
+    <img src="https://i.postimg.cc/Y9YRPd72/Mikroskooppi.png" alt="Logo" class="logo-image" />
+    <h1>Digitaalinen mikroskooppi</h1>
+  </div>
+
+  <div class="microscope-wrapper">
+    <div class="microscope-container">
+      <div class="image-frame" id="imageFrame">
+        <div id="placeholderText">Valitse näyte</div>
+        <img id="specimen" class="specimen-image" alt="Näyte" />
+
+        <div class="fullscreen-controls">
+          <div class="knobs-container" id="fullscreenKnobs"></div>
+          <select id="specimenSelectFullscreen">
+            <option value="">-- Valitse --</option>
+            <option value="plant">Kasvi</option>
+            <option value="plant2">Kasvi 2</option>
+            <option value="plant2mag">Kasvi 2 - suurennus</option>
+            <option value="human">Ihminen</option>
+            <option value="humanmag">Ihminen - suurennus</option>
+            <option value="cell">Sukusolu</option>
+          </select>
+          <button id="resetFullscreenBtn">Palauta näkymä</button>
+        </div>
+      </div>
+
+      <div class="knobs-container" id="normalKnobs"></div>
+    </div>
+
+    <div class="controls-panel">
+      <div class="section">
+        <h3>Valitse näyte</h3>
+        <select id="specimenSelect">
+          <option value="">-- Valitse --</option>
+          <option value="plant">Kasvi</option>
+          <option value="plant2">Kasvi 2</option>
+          <option value="plant2mag">Kasvi 2 - suurennus</option>
+          <option value="human">Ihminen</option>
+          <option value="humanmag">Ihminen - suurennus</option>
+          <option value="cell">Sukusolu</option>
+        </select>
+      </div>
+
+      <div class="section">
+        <h3>Lataa oma kuva</h3>
+        <input type="file" id="imageUpload" accept="image/*" />
+        <button id="applyUploadBtn">OK</button>
+      </div>
+
+      <button id="resetBtn">Palauta näkymä</button>
+      <button id="fullscreenBtn">Koko näyttöön</button>
+    </div>
+  </div>
+
+  <script>
+    const specimen = document.getElementById("specimen");
+    const placeholder = document.getElementById("placeholderText");
+    const imageFrame = document.getElementById("imageFrame");
+
+    let rotation = 0;
+    let scale = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+    let uploadedImageData = null;
+
+    function updateTransform() {
+      specimen.style.transform = `translate(${offsetX}px, ${offsetY}px) rotate(${rotation}deg) scale(${scale})`;
+    }
+
+    function rotate(deg) {
+      rotation += deg;
+      updateTransform();
+    }
+
+    function zoom(factor) {
+      scale *= factor;
+      updateTransform();
+    }
+
+    function move(direction) {
+      const step = 20;
+      if (direction === 'up') offsetY += step;
+      if (direction === 'down') offsetY -= step;
+      if (direction === 'left') offsetX += step;
+      if (direction === 'right') offsetX -= step;
+      updateTransform();
+    }
+
+    function showPlaceholder(show) {
+      placeholder.style.display = show ? "block" : "none";
+      specimen.style.display = show ? "none" : "block";
+    }
+
+    function changeSpecimen() {
+      const value = document.getElementById("specimenSelect").value;
+      uploadedImageData = null;
+      setSpecimenImage(value);
+    }
+
+    function changeSpecimenFromFullscreen() {
+      const value = document.getElementById("specimenSelectFullscreen").value;
+      document.getElementById("specimenSelect").value = value;
+      uploadedImageData = null;
+      setSpecimenImage(value);
+    }
+
+    function setSpecimenImage(value) {
+      let src = "";
+      switch (value) {
+        case "plant": src = "https://i.postimg.cc/sgn9C0TV/20240517-190619.jpg"; break;
+        case "plant2": src = "https://i.postimg.cc/Qxhp9rP8/20240407-142532.jpg"; break;
+        case "plant2mag": src = "https://i.postimg.cc/gks33TFv/20240407-142304.jpg"; break;
+        case "human": src = "https://i.postimg.cc/VvBnG7SP/20240407-153215.jpg"; break;
+        case "humanmag": src = "https://i.postimg.cc/pdpQWYSK/20240517-191104.jpg"; break;
+        case "cell": src = "https://i.postimg.cc/C18jDMS1/20240412-180508.jpg"; break;
+      }
+      if (src) {
+        specimen.src = src;
+        showPlaceholder(false);
+        resetView();
+      } else {
+        showPlaceholder(true);
+      }
+    }
+
+    function resetView() {
+      rotation = 0;
+      scale = 1;
+      offsetX = 0;
+      offsetY = 0;
+      updateTransform();
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        imageFrame.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function resetViewAndExitFullscreen() {
+      resetView();
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+    }
+
+    document.getElementById("specimenSelect").addEventListener("change", changeSpecimen);
+    document.getElementById("specimenSelectFullscreen").addEventListener("change", changeSpecimenFromFullscreen);
+    document.getElementById("resetBtn").addEventListener("click", resetView);
+    document.getElementById("fullscreenBtn").addEventListener("click", toggleFullscreen);
+    document.getElementById("resetFullscreenBtn").addEventListener("click", resetViewAndExitFullscreen);
+
+    document.getElementById("imageUpload").addEventListener("change", function (event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          uploadedImageData = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        uploadedImageData = null;
+      }
+    });
+
+    document.getElementById("applyUploadBtn").addEventListener("click", function () {
+      if (uploadedImageData) {
+        specimen.src = uploadedImageData;
+        showPlaceholder(false);
+        resetView();
+        document.getElementById("specimenSelect").value = "";
+        document.getElementById("specimenSelectFullscreen").value = "";
+        uploadedImageData = null;
+        document.getElementById("imageUpload").value = "";
+      }
+    });
+
+    const actions = [
+      { label: "↑", fn: () => move('up') },
+      { label: "↓", fn: () => move('down') },
+      { label: "←", fn: () => move('left') },
+      { label: "→", fn: () => move('right') },
+      { label: "+", fn: () => zoom(1.25) },
+      { label: "−", fn: () => zoom(0.8) },
+      { label: "↻", fn: () => rotate(15) },
+      { label: "↺", fn: () => rotate(-15) },
+    ];
+
+    function createKnobs(containerId) {
+      const container = document.getElementById(containerId);
+      actions.forEach(action => {
+        const btn = document.createElement("button");
+        btn.className = "knob";
+        btn.textContent = action.label;
+        btn.addEventListener("click", action.fn);
+        container.appendChild(btn);
+      });
+    }
+
+    createKnobs("normalKnobs");
+    createKnobs("fullscreenKnobs");
+
+    showPlaceholder(true);
+  </script>
+</body>
+</html>
