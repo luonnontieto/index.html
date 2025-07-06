@@ -279,157 +279,198 @@
     </div>
   </div>
 
-  <script>
-    const specimen = document.getElementById("specimen");
-    const placeholder = document.getElementById("placeholderText");
-    const imageFrame = document.getElementById("imageFrame");
+ <script>
+  const specimen = document.getElementById("specimen");
+  const placeholder = document.getElementById("placeholderText");
+  const imageFrame = document.getElementById("imageFrame");
 
-    let rotation = 0;
-    let scale = 1;
-    let offsetX = 0;
-    let offsetY = 0;
-    let uploadedImageData = null;
+  let rotation = 0;
+  let scale = 1;
+  let offsetX = 0;
+  let offsetY = 0;
+  let uploadedImageData = null;
 
-    function updateTransform() {
-      specimen.style.transform = `translate(${offsetX}px, ${offsetY}px) rotate(${rotation}deg) scale(${scale})`;
+  function updateTransform() {
+    specimen.style.transform = `translate(${offsetX}px, ${offsetY}px) rotate(${rotation}deg) scale(${scale})`;
+  }
+
+  function getCenterOffset() {
+    const frameRect = imageFrame.getBoundingClientRect();
+    const imgWidth = specimen.naturalWidth;
+    const imgHeight = specimen.naturalHeight;
+
+    const displayWidth = imgWidth * scale;
+    const displayHeight = imgHeight * scale;
+
+    const centerX = (frameRect.width - displayWidth) / 2;
+    const centerY = (frameRect.height - displayHeight) / 2;
+
+    offsetX = centerX;
+    offsetY = centerY;
+  }
+
+  function rotate(deg) {
+    rotation += deg;
+    updateTransform();
+  }
+
+  function zoom(factor) {
+    const frameRect = imageFrame.getBoundingClientRect();
+    const centerX = frameRect.width / 2;
+    const centerY = frameRect.height / 2;
+
+    const beforeX = (centerX - offsetX) / scale;
+    const beforeY = (centerY - offsetY) / scale;
+
+    scale *= factor;
+
+    const afterX = beforeX * scale;
+    const afterY = beforeY * scale;
+
+    offsetX = centerX - afterX;
+    offsetY = centerY - afterY;
+
+    updateTransform();
+  }
+
+  function move(direction) {
+    const step = 20;
+    if (direction === 'up') offsetY += step;
+    if (direction === 'down') offsetY -= step;
+    if (direction === 'left') offsetX += step;
+    if (direction === 'right') offsetX -= step;
+    updateTransform();
+  }
+
+  function showPlaceholder(show) {
+    placeholder.style.display = show ? "block" : "none";
+    specimen.style.display = show ? "none" : "block";
+  }
+
+  function changeSpecimen() {
+    const value = document.getElementById("specimenSelect").value;
+    uploadedImageData = null;
+    setSpecimenImage(value);
+  }
+
+  function changeSpecimenFromFullscreen() {
+    const value = document.getElementById("specimenSelectFullscreen").value;
+    document.getElementById("specimenSelect").value = value;
+    uploadedImageData = null;
+    setSpecimenImage(value);
+  }
+
+  function setSpecimenImage(value) {
+    let src = "";
+    switch (value) {
+      case "plant": src = "https://i.postimg.cc/sgn9C0TV/20240517-190619.jpg"; break;
+      case "plant2": src = "https://i.postimg.cc/Qxhp9rP8/20240407-142532.jpg"; break;
+      case "plant2mag": src = "https://i.postimg.cc/gks33TFv/20240407-142304.jpg"; break;
+      case "human": src = "https://i.postimg.cc/VvBnG7SP/20240407-153215.jpg"; break;
+      case "humanmag": src = "https://i.postimg.cc/pdpQWYSK/20240517-191104.jpg"; break;
+      case "cell": src = "https://i.postimg.cc/C18jDMS1/20240412-180508.jpg"; break;
     }
-
-    function rotate(deg) {
-      rotation += deg;
-      updateTransform();
-    }
-
-    function zoom(factor) {
-      scale *= factor;
-      updateTransform();
-    }
-
-    function move(direction) {
-      const step = 20;
-      if (direction === 'up') offsetY += step;
-      if (direction === 'down') offsetY -= step;
-      if (direction === 'left') offsetX += step;
-      if (direction === 'right') offsetX -= step;
-      updateTransform();
-    }
-
-    function showPlaceholder(show) {
-      placeholder.style.display = show ? "block" : "none";
-      specimen.style.display = show ? "none" : "block";
-    }
-
-    function changeSpecimen() {
-      const value = document.getElementById("specimenSelect").value;
-      uploadedImageData = null;
-      setSpecimenImage(value);
-    }
-
-    function changeSpecimenFromFullscreen() {
-      const value = document.getElementById("specimenSelectFullscreen").value;
-      document.getElementById("specimenSelect").value = value;
-      uploadedImageData = null;
-      setSpecimenImage(value);
-    }
-
-    function setSpecimenImage(value) {
-      let src = "";
-      switch (value) {
-        case "plant": src = "https://i.postimg.cc/sgn9C0TV/20240517-190619.jpg"; break;
-        case "plant2": src = "https://i.postimg.cc/Qxhp9rP8/20240407-142532.jpg"; break;
-        case "plant2mag": src = "https://i.postimg.cc/gks33TFv/20240407-142304.jpg"; break;
-        case "human": src = "https://i.postimg.cc/VvBnG7SP/20240407-153215.jpg"; break;
-        case "humanmag": src = "https://i.postimg.cc/pdpQWYSK/20240517-191104.jpg"; break;
-        case "cell": src = "https://i.postimg.cc/C18jDMS1/20240412-180508.jpg"; break;
-      }
-      if (src) {
-        specimen.src = src;
-        showPlaceholder(false);
+    if (src) {
+      specimen.onload = () => {
         resetView();
-      } else {
-        showPlaceholder(true);
-      }
+        getCenterOffset();
+        updateTransform();
+      };
+      specimen.src = src;
+      showPlaceholder(false);
+    } else {
+      showPlaceholder(true);
     }
+  }
 
-    function resetView() {
-      rotation = 0;
-      scale = 1;
-      offsetX = 0;
-      offsetY = 0;
-      updateTransform();
+  function resetView() {
+    rotation = 0;
+    scale = 1;
+    offsetX = 0;
+    offsetY = 0;
+    if (specimen.complete && specimen.naturalWidth) {
+      getCenterOffset();
     }
+    updateTransform();
+  }
 
-    function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        imageFrame.requestFullscreen();
-      } else {
-        document.exitFullscreen();
-      }
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      imageFrame.requestFullscreen();
+    } else {
+      document.exitFullscreen();
     }
+  }
 
-    function resetViewAndExitFullscreen() {
-      resetView();
-      if (document.fullscreenElement) {
-        document.exitFullscreen();
-      }
+  function resetViewAndExitFullscreen() {
+    resetView();
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
     }
+  }
 
-    document.getElementById("specimenSelect").addEventListener("change", changeSpecimen);
-    document.getElementById("specimenSelectFullscreen").addEventListener("change", changeSpecimenFromFullscreen);
-    document.getElementById("resetBtn").addEventListener("click", resetView);
-    document.getElementById("fullscreenBtn").addEventListener("click", toggleFullscreen);
-    document.getElementById("resetFullscreenBtn").addEventListener("click", resetViewAndExitFullscreen);
+  document.getElementById("specimenSelect").addEventListener("change", changeSpecimen);
+  document.getElementById("specimenSelectFullscreen").addEventListener("change", changeSpecimenFromFullscreen);
+  document.getElementById("resetBtn").addEventListener("click", resetView);
+  document.getElementById("fullscreenBtn").addEventListener("click", toggleFullscreen);
+  document.getElementById("resetFullscreenBtn").addEventListener("click", resetViewAndExitFullscreen);
 
-    document.getElementById("imageUpload").addEventListener("change", function (event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          uploadedImageData = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      } else {
-        uploadedImageData = null;
-      }
-    });
+  document.getElementById("imageUpload").addEventListener("change", function (event) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        uploadedImageData = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      uploadedImageData = null;
+    }
+  });
 
-    document.getElementById("applyUploadBtn").addEventListener("click", function () {
-      if (uploadedImageData) {
-        specimen.src = uploadedImageData;
-        showPlaceholder(false);
+  document.getElementById("applyUploadBtn").addEventListener("click", function () {
+    if (uploadedImageData) {
+      specimen.onload = () => {
         resetView();
-        document.getElementById("specimenSelect").value = "";
-        document.getElementById("specimenSelectFullscreen").value = "";
-        uploadedImageData = null;
-        document.getElementById("imageUpload").value = "";
-      }
-    });
-
-    const actions = [
-      { label: "↑", fn: () => move('up') },
-      { label: "↓", fn: () => move('down') },
-      { label: "←", fn: () => move('left') },
-      { label: "→", fn: () => move('right') },
-      { label: "+", fn: () => zoom(1.25) },
-      { label: "−", fn: () => zoom(0.8) },
-      { label: "↻", fn: () => rotate(15) },
-      { label: "↺", fn: () => rotate(-15) },
-    ];
-
-    function createKnobs(containerId) {
-      const container = document.getElementById(containerId);
-      actions.forEach(action => {
-        const btn = document.createElement("button");
-        btn.className = "knob";
-        btn.textContent = action.label;
-        btn.addEventListener("click", action.fn);
-        container.appendChild(btn);
-      });
+        getCenterOffset();
+        updateTransform();
+      };
+      specimen.src = uploadedImageData;
+      showPlaceholder(false);
+      document.getElementById("specimenSelect").value = "";
+      document.getElementById("specimenSelectFullscreen").value = "";
+      uploadedImageData = null;
+      document.getElementById("imageUpload").value = "";
     }
+  });
 
-    createKnobs("normalKnobs");
-    createKnobs("fullscreenKnobs");
+  const actions = [
+    { label: "↑", fn: () => move('up') },
+    { label: "↓", fn: () => move('down') },
+    { label: "←", fn: () => move('left') },
+    { label: "→", fn: () => move('right') },
+    { label: "+", fn: () => zoom(1.25) },
+    { label: "−", fn: () => zoom(0.8) },
+    { label: "↻", fn: () => rotate(15) },
+    { label: "↺", fn: () => rotate(-15) },
+  ];
 
-    showPlaceholder(true);
-  </script>
+  function createKnobs(containerId) {
+    const container = document.getElementById(containerId);
+    actions.forEach(action => {
+      const btn = document.createElement("button");
+      btn.className = "knob";
+      btn.textContent = action.label;
+      btn.addEventListener("click", action.fn);
+      container.appendChild(btn);
+    });
+  }
+
+  createKnobs("normalKnobs");
+  createKnobs("fullscreenKnobs");
+
+  showPlaceholder(true);
+</script>
+
 </body>
 </html>
